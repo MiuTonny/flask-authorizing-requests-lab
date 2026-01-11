@@ -112,7 +112,7 @@ class MemberOnlyArticle(Resource):
 
         article = Article.query.filter_by(id=id, is_member_only=True).first()
         if not article:
-            return {}, 404
+            return {"error": "Not Found"}, 404
 
         return make_response(ArticleSchema().dump(article), 200)
 
