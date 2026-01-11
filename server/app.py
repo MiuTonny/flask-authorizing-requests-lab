@@ -69,30 +69,53 @@ class Logout(Resource):
 
     def delete(self):
 
-        session['user_id'] = None
+        session.pop('user_id', None)
         
         return {}, 204
 
 class CheckSession(Resource):
 
     def get(self):
-        
-        user_id = session['user_id']
+        user_id = session.get('user_id')
         if user_id:
             user = User.query.filter(User.id == user_id).first()
             return UserSchema().dump(user), 200
-        
+
         return {}, 401
 
+
+
 class MemberOnlyIndex(Resource):
-    
+
     def get(self):
-        pass
+        if not session.get('user_id'):
+            return {}, 401
+
+        member_articles = Article.query.filter(
+            Article.is_member_only.is_(True)
+        ).all()
+
+        
+
+        return make_response(
+            [ArticleSchema().dump(a) for a in member_articles],
+            200
+        )
+
+
 
 class MemberOnlyArticle(Resource):
-    
+
     def get(self, id):
-        pass
+        if not session.get('user_id'):
+            return {"error": "Unauthorized"}, 401
+
+        article = Article.query.filter_by(id=id, is_member_only=True).first()
+        if not article:
+            return {}, 404
+
+        return make_response(ArticleSchema().dump(article), 200)
+
 
 api.add_resource(ClearSession, '/clear', endpoint='clear')
 api.add_resource(IndexArticle, '/articles', endpoint='article_list')
